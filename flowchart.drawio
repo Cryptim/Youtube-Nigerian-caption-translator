@@ -1,0 +1,51 @@
+<mxfile>
+  <diagram id="F7HWAXYzIPBP5TcWSHp1" name="Page-1">
+    <mxGraphModel dx="1386" dy="779" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="3" value="&lt;b&gt;&lt;font style=&quot;color: rgb(255, 28, 133);&quot;&gt;User&lt;/font&gt; Opens Youtube&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="140" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="7" style="edgeStyle=none;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="5" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="&lt;div&gt;&lt;b&gt;&amp;nbsp;YouTube Caption Translator&amp;nbsp; &amp;nbsp;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;(&lt;font style=&quot;color: rgb(255, 28, 133);&quot;&gt;Extension&lt;/font&gt; popup / toolbar)&lt;/b&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="260" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="10" style="edgeStyle=none;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="8" target="5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="&lt;div&gt;&lt;b&gt;Captions detected&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&amp;nbsp;via YouTube API &lt;font style=&quot;color: rgb(255, 28, 133);&quot;&gt;or&lt;/font&gt; DOM&lt;/b&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="360" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="11" style="edgeStyle=none;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" source="12" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="390" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" value="&lt;div&gt;&lt;b&gt;&lt;font style=&quot;color: rgb(255, 28, 133);&quot;&gt;&amp;nbsp;User&lt;/font&gt; selects target&amp;nbsp; &amp;nbsp; &amp;nbsp;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;color: rgb(255, 28, 133);&quot;&gt;language&lt;/font&gt; (e.g., Yoruba)&lt;/b&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="460" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="18" style="edgeStyle=none;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="13" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="&lt;div&gt;&lt;font color=&quot;#ff1c85&quot;&gt;&lt;b&gt;Send captions&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;color: rgb(255, 28, 133);&quot;&gt;&amp;nbsp;to&amp;nbsp;&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#ff1c85&quot;&gt;&lt;b&gt;Awarri’s&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;NTAtlas &lt;/b&gt;&lt;b style=&quot;background-color: transparent; color: rgb(63, 63, 63);&quot;&gt;&lt;font style=&quot;color: rgb(255, 28, 133);&quot;&gt;language&lt;/font&gt;&lt;/b&gt;&lt;b style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt; model API&lt;/b&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="560" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="17" style="edgeStyle=none;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="14" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="&lt;div&gt;&lt;b&gt;Receive translated &lt;font&gt;&lt;font style=&quot;color: rgb(255, 255, 127);&quot;&gt;text&lt;/font&gt;&lt;font style=&quot;color: rgb(253, 255, 216);&quot;&gt;&amp;nbsp;&lt;/font&gt;&lt;font style=&quot;color: rgb(255, 255, 127);&quot;&gt;&amp;nbsp;&lt;/font&gt;&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;color: rgb(255, 28, 133);&quot;&gt;from&lt;/font&gt; NTAtlas&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="730" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="16" style="edgeStyle=none;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="15" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="&lt;div&gt;&lt;b&gt;Display translated captions&amp;nbsp;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b style=&quot;background-color: transparent; color: rgb(63, 63, 63);&quot;&gt;&lt;font style=&quot;color: rgb(255, 28, 133);&quot;&gt;on&lt;/font&gt;&lt;/b&gt;&lt;b style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt; YouTube video overlay&lt;/b&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="890" width="180" height="90" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
