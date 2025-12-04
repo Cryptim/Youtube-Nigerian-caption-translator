@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Translator Settings</title>
+    <style>
+      body{font-family:Inter,Segoe UI,Arial;padding:18px;background:#071025;color:#e6eef6}
+      label{display:block;margin-top:12px;color:#9aa4b2}
+      input,select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#e6eef6}
+      button{margin-top:14px;padding:10px;border-radius:8px;border:0;background:#4f46e5;color:#fff}
+      .hint{font-size:12px;color:#7b8793;margin-top:6px}
+    </style>
+  </head>
+  <body>
+    <h2>Settings</h2>
+    <label for="apiKey">Translation API key (optional)</label>
+    <input id="apiKey" placeholder="Paste API key to use external translator" />
+    <label for="defaultLang">Default target language</label>
+    <select id="defaultLang"></select>
+    <div class="hint">Saving here will be used by the popup and background worker.</div>
+    <button id="saveBtn">Save</button>
+    <script src="options.js" defer></script>
+  </body>
+</html>

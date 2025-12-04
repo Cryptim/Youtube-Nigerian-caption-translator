@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Youtube Nigerian Caption Translator",
+  "version": "1.0.0",
+  "description": "Translate YouTube captions into Nigerian languages (example).",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

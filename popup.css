@@ -1,0 +1,261 @@
+:root{
+  --bg:#ffffff;
+  --card-bg:#f7f7fb;
+  --text:#111827;
+  --muted:#6b7280;
+  --accent:#2563eb;
+  --transition:200ms ease;
+
+  /* card visuals */
+  --card-border: 1px solid rgba(15, 23, 42, 0.06);
+  --card-shadow: 0 8px 24px rgba(2,6,23,0.08);
+
+  /* NEW: control borders & backgrounds so inputs/buttons show on white */
+  --control-border: 1px solid rgba(15, 23, 42, 0.12); /* slightly stronger */
+  --btn-border: 1px solid rgba(15, 23, 42, 0.08);
+  --control-bg: #ffffff;
+}
+/* Dark theme overrides when html has .dark */
+html.dark{
+  --bg:#0b1220;
+  --card-bg:#0f1724;
+  --text:#e6eef8;
+  --muted:#9aa8bf;
+  --accent:#60a5fa;
+
+  --card-border: 1px solid rgba(255,255,255,0.03);
+  --card-shadow: 0 6px 18px rgba(2,6,23,0.18);
+
+  /* Dark theme control borders (subtle) */
+  --control-border: 1px solid rgba(255,255,255,0.04);
+  --btn-border: 1px solid rgba(255,255,255,0.04);
+  --control-bg: #0b1220;
+}
+*{box-sizing:border-box}
+html,body{
+  height:100%;
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  transition:background var(--transition), color var(--transition);
+  width:var(--popup-width);
+  min-width:340px;
+  overflow:visible;
+}
+
+/* Card container */
+.card{
+  margin:10px;
+  border-radius:var(--card-radius);
+  background:var(--card-bg);
+  color:var(--text);
+  padding:12px;
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+/* Hero image as background (does not overlap content) */
+.hero{
+  width:100%;
+  height:96px;
+  background-image: url("assets/image.png");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  filter:contrast(1) saturate(1);
+  display:block;
+}
+
+/* Header */
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px}
+.title{font-size:15px;margin:0;font-weight:700;color:var(--text)}
+.settings{color:var(--muted);text-decoration:none;font-size:16px}
+
+/* Body */
+.card-body{padding:12px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg, rgba(8,12,20,0.02), transparent)}
+.label{font-size:12px;color:var(--muted)}
+.select{
+  appearance:none;
+  -webkit-appearance:none;
+  background: var(--control-bg);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 8px;
+
+  /* Ensure visible border */
+  border: var(--control-border);
+  transition: border-color var(--transition), background var(--transition), color var(--transition);
+}
+.row{display:flex;gap:8px}
+.btn{
+  flex:1;
+  padding:10px;
+  border-radius:10px;
+  border:0;
+  cursor:pointer;
+  font-weight:600;
+  transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
+}
+.primary{
+  background:linear-gradient(90deg,var(--accent),#5b21b6);
+  color:white;
+  border: var(--btn-border);
+  box-shadow: 0 6px 18px rgba(37,99,235,0.12);
+}
+.primary:hover{transform:translateY(-2px)}
+.outline{
+  background:transparent;
+  color:var(--text);
+  border: var(--control-border);
+}
+.status{font-size:12px;color:var(--muted);padding:6px}
+
+/* Footer */
+.card-footer{padding:10px;text-align:center;color:var(--muted);font-size:12px;border-top:1px solid rgba(255,255,255,0.02)}
+
+/* Icon button styling (no raster images) */
+.icon-btn{
+  background:transparent;
+  border: none;
+  padding: 6px;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text);
+  border-radius: 6px;
+}
+
+.icon-btn:focus{
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Icons - show only the appropriate one */
+.icon{
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* When in dark mode hide the moon icon (we show sun to switch back) */
+html.dark .icon.moon{
+  display: none;
+}
+
+/* When not in dark mode hide the sun icon */
+html:not(.dark) .icon.sun{
+  display: none;
+}
+
+/* Small transitions */
+.icon, .icon-btn{
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+/* Optional: tweak header-controls layout */
+.header-controls{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Make sure everything is visible on small windows */
+@media (max-width:480px){
+  :root{ --popup-width: 360px; }
+  .hero{height:72px}
+  .row{flex-direction:column}
+}
+
+/* Ensure injected settings back button looks consistent */
+.btn.outline#settingsBack {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  min-width: 48px;
+}
+
+/* Injected settings header: back button + title */
+.settings-injected-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Compact back button: prevent flex:1 from stretching, make arrow larger */
+.settings-back {
+  /* override .btn's flex:1 so the button does not grow */
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  font-size: 13px;
+  height: auto;
+  min-width: 48px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: var(--control-border);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Make the arrow visually larger than the label */
+.settings-back .back-arrow {
+  font-size: 16px;      /* larger arrow */
+  line-height: 1;
+  display: inline-block;
+}
+
+/* Label styling */
+.settings-back .back-label {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1;
+  display: inline-block;
+}
+
+/* Title next to back button */
+.settings-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* Ensure injected options body scrolls internally rather than resizing popup */
+.card-body {
+  max-height: 56vh;
+  overflow: auto;
+  padding-right: 6px; /* small room for scrollbar */
+}
+
+/* Make form controls inside injected settings fill available width */
+.card-body input[type="text"],
+.card-body select,
+.card-body textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: var(--control-border);
+  background: var(--control-bg);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+/* Keep save buttons in options visible and styled */
+.card-body button {
+  min-height: 34px;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
