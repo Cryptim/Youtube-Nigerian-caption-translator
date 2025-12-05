@@ -1,52 +1,205 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>YT Nigerian Caption Translator</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <div class="card" role="dialog" aria-label="Caption translator">
-      <div class="hero" aria-hidden="true"></div>
 
-      <header class="card-header">
-        <h1 class="title">Caption Translator</h1>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>YT Nigerian Caption Translator</title>
+  <link rel="stylesheet" href="popup.css" />
+  <style>
+    /* small helper: keep accessible text available to screen readers but visually hidden */
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
 
-        <!-- merged header-controls: theme toggle + settings -->
-        <div class="header-controls">
-          <!-- Theme toggle -->
-          <button id="themeToggle" class="icon-btn" aria-label="Toggle theme" title="Toggle theme">
-            <!-- moon / sun SVGs; JS will toggle visible state -->
-            <svg class="icon moon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/>
+    /* ensure pin button shows only the icon and no extra spacing/text */
+    .pin-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .pin-btn .pin-filled {
+      display: none;
+    }
+
+    .pin-btn.pinned .pin-filled {
+      display: inline;
+    }
+
+    .pin-btn.pinned .pin-outline {
+      display: none;
+    }
+
+    /* NEW: red background and white icon when pinned */
+    .pin-btn.pinned {
+      background: #ef4444;
+    }
+
+    .pin-btn.pinned svg {
+      fill: #fff !important;
+      stroke: #fff !important;
+    }
+
+    .live-caption {
+      width: 100%;
+      max-width: 340px;
+      min-width: 240px;
+      height: 160px;
+      min-height: 160px;
+      max-height: 160px;
+      margin: 12px 0;
+      background: #f3f4f6;
+      border-radius: 8px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .live-caption-original {
+      width: 100%;
+      height: 100%;
+      padding: 10px;
+      font-size: 16px;
+      color: #222;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: pre-line;
+      word-break: break-word;
+      box-sizing: border-box;
+      scrollbar-width: none;
+    }
+
+    .live-caption-original::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Make translated caption container same size as original */
+    .live-caption-translated {
+      width: 100%;
+      max-width: 340px;
+      min-width: 240px;
+      height: 160px;
+      min-height: 160px;
+      max-height: 160px;
+      margin: 12px 0;
+      background: #e0f7fa;
+      border-radius: 8px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-size: 16px;
+      color: #222;
+      padding: 10px;
+      /* Hide scrollbar if any */
+      scrollbar-width: none;
+    }
+
+    .live-caption-translated::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card" role="dialog" aria-label="Caption translator">
+    <div class="hero" aria-hidden="true"></div>
+
+    <header class="card-header">
+      <h1 class="title">Caption Translator</h1>
+
+      <!-- merged header-controls: theme toggle + settings -->
+      <div class="header-controls">
+        <!-- Theme toggle -->
+        <button id="themeToggle" class="icon-btn" aria-label="Toggle theme" title="Toggle theme">
+          <!-- moon / sun SVGs; JS will toggle visible state -->
+          <svg class="icon moon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor" />
+          </svg>
+          <svg class="icon sun" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+              d="M6.76 4.84l-1.8-1.79L3.17 4.84l1.79 1.79 1.8-1.79zM1 13h3v-2H1v2zm10 9h2v-3h-2v3zM17.24 19.16l1.79 1.79 1.79-1.79-1.79-1.79-1.79 1.79zM20 11v2h3v-2h-3zM12 6a6 6 0 100 12 6 6 0 000-12zM6.76 19.16l-1.79-1.79-1.79 1.79 1.79 1.79 1.79-1.79zM19.23 4.84l-1.79-1.79-1.79 1.79 1.79 1.79 1.79-1.79zM12 1h0v3h0V1z"
+              fill="currentColor" />
+          </svg>
+        </button>
+
+        <!-- Pin button in its own container -->
+        <div class="icon-container">
+          <button id="pinBtn" class="icon-btn pin-btn" aria-pressed="false" aria-label="Pin popup (keep open)" title="Pin popup (keep open)" type="button">
+            <span class="visually-hidden">Pin popup</span>
+            <!-- Pin icon from Icons8 -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 256 256" xml:space="preserve" class="pin-outline">
+              <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;"
+                transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                <path
+                  d="M 45 0 C 25.463 0 9.625 15.838 9.625 35.375 c 0 8.722 3.171 16.693 8.404 22.861 L 45 90 l 26.97 -31.765 c 5.233 -6.167 8.404 -14.139 8.404 -22.861 C 80.375 15.838 64.537 0 45 0 z M 45 48.705 c -8.035 0 -14.548 -6.513 -14.548 -14.548 c 0 -8.035 6.513 -14.548 14.548 -14.548 s 14.548 6.513 14.548 14.548 C 59.548 42.192 53.035 48.705 45 48.705 z"
+                  style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1;"
+                  transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round" />
+              </g>
             </svg>
-            <svg class="icon sun" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M6.76 4.84l-1.8-1.79L3.17 4.84l1.79 1.79 1.8-1.79zM1 13h3v-2H1v2zm10 9h2v-3h-2v3zM17.24 19.16l1.79 1.79 1.79-1.79-1.79-1.79-1.79 1.79zM20 11v2h3v-2h-3zM12 6a6 6 0 100 12 6 6 0 000-12zM6.76 19.16l-1.79-1.79-1.79 1.79 1.79 1.79 1.79-1.79zM19.23 4.84l-1.79-1.79-1.79 1.79 1.79 1.79 1.79-1.79zM12 1h0v3h0V1z" fill="currentColor"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 256 256" xml:space="preserve" class="pin-filled">
+              <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;"
+                transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                <path
+                  d="M 45 0 C 25.463 0 9.625 15.838 9.625 35.375 c 0 8.722 3.171 16.693 8.404 22.861 L 45 90 l 26.97 -31.765 c 5.233 -6.167 8.404 -14.139 8.404 -22.861 C 80.375 15.838 64.537 0 45 0 z M 45 48.705 c -8.035 0 -14.548 -6.513 -14.548 -14.548 c 0 -8.035 6.513 -14.548 14.548 -14.548 s 14.548 6.513 14.548 14.548 C 59.548 42.192 53.035 48.705 45 48.705 z"
+                  style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1;"
+                  transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round" />
+              </g>
             </svg>
           </button>
+        </div>
 
+        <!-- Settings button in its own container -->
+        <div class="icon-container">
           <a id="settingsBtn" class="settings" href="options.html" title="Settings" aria-label="Open settings">⚙️</a>
         </div>
-      </header>
+      </div>
+    </header>
 
-      <main class="card-body" role="main">
-        <label for="targetLang" class="label">Target language</label>
-        <select id="targetLang" class="select" aria-labelledby="targetLang"></select>
+    <main class="card-body" role="main">
+      <label for="targetLang" class="label">Target language</label>
+      <select id="targetLang" class="select" aria-labelledby="targetLang"></select>
 
-        <div class="row">
-          <button id="translateBtn" class="btn primary">Translate Current Captions</button>
-          <button id="clearBtn" class="btn outline">Clear Overlay</button>
-        </div>
+      <div class="row">
+        <button id="translateBtn" class="btn primary">Translate Current Captions</button>
+        <button id="clearBtn" class="btn outline">Clear Overlay</button>
+      </div>
 
-        <div id="status" class="status" role="status" aria-live="polite">Ready</div>
-      </main>
+      <div id="status" class="status" role="status" aria-live="polite">Ready</div>
 
-      <footer class="card-footer">
-        <small>v1.0 · Privacy-first · Built for YouTube</small>
-      </footer>
-    </div>
+      <!-- NEW: live caption area -->
+      <div id="liveCaption" class="live-caption" aria-live="polite" role="status">
+        <div id="liveCaptionOriginal" class="live-caption-original" aria-live="polite" role="status"></div>
+      </div>
+      <!-- Translated caption container moved outside -->
+      <div id="liveCaptionTranslated" class="live-caption-translated" aria-live="polite" role="status"></div>
+    </main>
 
-    <script src="popup.js" defer></script>
-  </body>
+    <footer class="card-footer">
+      <small>v1.0 · Privacy-first · Built for YouTube</small>
+    </footer>
+  </div>
+
+  <script src="popup.js" defer></script>
+</body>
+
 </html>

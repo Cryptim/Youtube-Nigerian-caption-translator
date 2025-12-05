@@ -1,6 +1,4 @@
 const LANGS = [
-  { code: 'en', name: 'English' },
-  { code: 'pcm', name: 'Nigerian Pidgin' },
   { code: 'yo', name: 'Yoruba' },
   { code: 'ig', name: 'Igbo' },
   { code: 'ha', name: 'Hausa' }
