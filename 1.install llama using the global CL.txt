@@ -1,0 +1,25 @@
+1.install llama using the global CLI (winget install llama.cpp)
+2.Downloaded the N-ATLaS GGUF Model saved in a separate folder called llama on my desktop
+3.open cmd in the folder(llama folder where i saved the model)Then confirm the file is there:
+dir
+You should see:
+N-ATLaS-GGUF-Q8_0.gguf
+4.Run Still inside the folder, run:
+llama-server -m N-ATLaS-GGUF-Q8_0.gguf --port 8080
+What this does:
+Starts the AI model
+Runs it on your laptop
+
+Creates an OpenAI-style API at:
+http://localhost:8080
+
+check this by creating a new cmd and paste 
+curl http://127.0.0.1:8080/v1/chat/completions ^
+  -H "Content-Type: application/json" ^
+  -d "{\"model\": \"local\", \"messages\": [{\"role\": \"user\", \"content\": \"Hello\"}]}"
+ you will see message how can i help you today
+{
+  "choices": [{
+    "message": { "content": "Hello! How can I assist you?" }
+  }]
+}

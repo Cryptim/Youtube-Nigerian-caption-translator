@@ -37,6 +37,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   } else if (msg.action === 'clear_overlay') {
     clearOverlay();
     sendResponse({ status: 'Overlay removed' });
+  } else if (msg.action === 'overlay_translation' && typeof msg.text === 'string') {
+    showOverlay(msg.text);
+    sendResponse({ status: 'ok' });
   }
 });
 
@@ -157,3 +160,35 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Expose a probe for fast checks
   window.__yt_latest_caption = lastCaption;
 })();
+
+let overlayDiv = null;
+
+function showOverlay(text) {
+  if (!overlayDiv) {
+    overlayDiv = document.createElement('div');
+    overlayDiv.id = 'yt-nigerian-caption-overlay';
+    overlayDiv.style.position = 'fixed';
+    overlayDiv.style.bottom = '12%';
+    overlayDiv.style.left = '50%';
+    overlayDiv.style.transform = 'translateX(-50%)';
+    overlayDiv.style.background = 'rgba(0,0,0,0.7)';
+    overlayDiv.style.color = '#fff';
+    overlayDiv.style.padding = '12px 24px';
+    overlayDiv.style.borderRadius = '8px';
+    overlayDiv.style.fontSize = '1.5em';
+    overlayDiv.style.zIndex = '9999';
+    overlayDiv.style.pointerEvents = 'none';
+    overlayDiv.style.maxWidth = '80vw';
+    overlayDiv.style.textAlign = 'center';
+    document.body.appendChild(overlayDiv);
+  }
+  overlayDiv.textContent = text;
+  overlayDiv.style.display = 'block';
+}
+
+function clearOverlay() {
+  if (overlayDiv) {
+    overlayDiv.style.display = 'none';
+    overlayDiv.textContent = '';
+  }
+}

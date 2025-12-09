@@ -54,16 +54,29 @@ function populateSelect(targetEl) {
     opt.value = l.code; opt.textContent = l.name;
     targetEl.appendChild(opt);
   });
-  return new Promise((resolve) => {
-    try {
-      chrome.storage && chrome.storage.sync
-        ? chrome.storage.sync.get({ preferredLang: DEFAULT_LANG }, res => {
-            targetEl.value = res.preferredLang || DEFAULT_LANG;
-            resolve();
-          })
-        : (targetEl.value = DEFAULT_LANG, resolve());
-    } catch (e) { targetEl.value = DEFAULT_LANG; resolve(); }
-  });
+  // leave selection to caller; populateSelect only builds options
+  return Promise.resolve();
+}
+
+// Read preferred language reliably from chrome.storage.sync, then chrome.storage.local, then localStorage
+async function readPreferredLang() {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      if (chrome.storage.sync && chrome.storage.sync.get) {
+        try {
+          const res = await new Promise(r => chrome.storage.sync.get({ preferredLang: DEFAULT_LANG }, r));
+          if (res && res.preferredLang) return res.preferredLang;
+        } catch (e) {}
+      }
+      if (chrome.storage.local && chrome.storage.local.get) {
+        try {
+          const res2 = await new Promise(r => chrome.storage.local.get({ preferredLang: DEFAULT_LANG }, r));
+          if (res2 && res2.preferredLang) return res2.preferredLang;
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
+  try { return localStorage.getItem('preferredLang') || DEFAULT_LANG; } catch (e) { return DEFAULT_LANG; }
 }
 
 // Messaging helpers
@@ -130,73 +143,129 @@ async function fetchCurrentCaption(tab) {
   }
 }
 
-// Translate text using Google Translate unofficial endpoint (best-effort).
-// Target codes: use LANGS codes (yo, ig, ha). No API key required (unofficial).
+// Add simple code-to-name map for target language
+const LANG_NAME_MAP = { yo: 'Yoruba', ig: 'Igbo', ha: 'Hausa' };
+
+// helper: pick a concise sentence from caption for translation
+function pickShortSentence(text, maxLen = 300) {
+  if (!text) return '';
+  // split into sentences by punctuation, prefer last complete sentence
+  const parts = text.split(/(?<=[.?!])\s+/);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const s = parts[i].trim();
+    if (s.length > 0 && s.length <= maxLen) return s;
+  }
+  // fallback: trim whole text to maxLen, prefer end (use last maxLen chars)
+  if (text.length <= maxLen) return text.trim();
+  return text.slice(-maxLen).trim();
+}
+
+// Translate text using local llama-server (OpenAI-compatible).
 async function translateText(text, targetLangCode) {
   if (!text) return '';
+  // pick concise sentence to avoid long generation and reduce timeout risk
+  const shortText = pickShortSentence(text, 300);
 
-  // Try user-configured N-ATLaS endpoint first (stored as `nAtlasEndpoint` in chrome.storage.sync)
-  let endpoint = '';
-  try {
-    endpoint = await new Promise(resolve => {
-      try {
-        if (chrome && chrome.storage && chrome.storage.sync) {
-          chrome.storage.sync.get({ nAtlasEndpoint: '' }, res => resolve(res.nAtlasEndpoint || ''));
-        } else {
-          resolve('');
-        }
-      } catch (e) { resolve(''); }
-    });
-  } catch (e) { endpoint = ''; }
+  // Add a timeout to the fetch request
+  const controller = new AbortController();
+  const baseTimeoutMs = 30000; // 30 seconds
+  let timeoutHandle = setTimeout(() => controller.abort(), baseTimeoutMs);
 
-  if (endpoint) {
+  const langName = LANG_NAME_MAP[targetLangCode] || targetLangCode;
+  const payload = {
+    model: "local",
+    messages: [
+      { role: "system", content: `You are a translation assistant. Translate ONLY the user's text into ${langName}. Output only the translation.` },
+      { role: "user", content: `Translate this to ${langName}: ${shortText}` }
+    ],
+    max_tokens: 128,
+    temperature: 0.1
+  };
+
+  async function doRequest(signal) {
     try {
-      // Small timeout to avoid hanging the popup if endpoint is unreachable
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 7000);
-
-      const resp = await fetch(endpoint, {
+      let resp = await fetch('http://127.0.0.1:8080/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, target: targetLangCode }),
-        signal: controller.signal
+        body: JSON.stringify(payload),
+        signal
       });
-
-      clearTimeout(timeoutId);
-
-      if (resp.ok) {
-        const ct = (resp.headers.get('content-type') || '').toLowerCase();
-        let out = '';
-        if (ct.includes('application/json')) {
-          const data = await resp.json();
-          // Accept several common shapes: string, { translated }, { translation }, { output }
-          if (typeof data === 'string') out = data;
-          else out = data.translated || data.translation || data.output || '';
-        } else {
-          out = await resp.text();
-        }
-        if (out && out.trim()) return out;
+      if (!resp.ok) {
+        resp = await fetch('http://localhost:8080/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal
+        });
       }
+      return resp;
     } catch (e) {
-      // endpoint failed -> fall through to fallback translator
-      console.warn('N-ATLaS endpoint request failed', e);
+      throw e;
     }
   }
 
-  // Fallback: use translate.googleapis.com as a best-effort when no endpoint or it fails
   try {
-    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
-                encodeURIComponent(targetLangCode) + '&dt=t&q=' + encodeURIComponent(text);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('translate failed');
-    const data = await res.json();
-    if (!Array.isArray(data)) throw new Error('unexpected translate response');
-    const sentences = data[0] || [];
-    const out = sentences.map(s => s[0]).join('');
-    return out;
+    setStatusEl(getElements().statusEl, 'Translating…');
+    const resp = await doRequest(controller.signal);
+    clearTimeout(timeoutHandle);
+
+    if (resp && resp.ok) {
+      const data = await resp.json();
+      const content = (data && data.choices && data.choices[0] && (data.choices[0].message?.content || data.choices[0].text)) || '';
+      if (!content || !content.trim()) {
+        setStatusEl(getElements().statusEl, 'Translation returned empty result', true);
+        return '(translation error: No translation returned)';
+      }
+      setStatusEl(getElements().statusEl, 'Translation complete', true);
+      return content.trim();
+    } else if (resp) {
+      const errText = await resp.text();
+      setStatusEl(getElements().statusEl, `llama-server HTTP ${resp.status}`, true);
+      return `(translation error: HTTP ${resp.status})`;
+    } else {
+      setStatusEl(getElements().statusEl, 'No response from llama-server', true);
+      return '(translation error: No response from llama-server)';
+    }
   } catch (e) {
-    console.warn('translate failed', e);
-    return ''; // caller will handle fallback
+    clearTimeout(timeoutHandle);
+    // If aborted due to timeout, retry once with a longer timeout
+    if (e.name === 'AbortError' || (e.message && e.message.toLowerCase().includes('failed to fetch'))) {
+      setStatusEl(getElements().statusEl, 'Translation timed out — retrying...', true);
+      // reset lastTranslatedSource so next poll will attempt again
+      try { lastTranslatedSource = ''; } catch (err) {}
+      // retry with longer timeout
+      const retryController = new AbortController();
+      const retryTimeout = setTimeout(() => retryController.abort(), baseTimeoutMs * 1.5); // 45s
+      try {
+        const resp2 = await doRequest(retryController.signal);
+        clearTimeout(retryTimeout);
+        if (resp2 && resp2.ok) {
+          const data2 = await resp2.json();
+          const content2 = (data2 && data2.choices && data2.choices[0] && (data2.choices[0].message?.content || data2.choices[0].text)) || '';
+          if (content2 && content2.trim()) {
+            setStatusEl(getElements().statusEl, 'Translation complete (after retry)', true);
+            return content2.trim();
+          } else {
+            setStatusEl(getElements().statusEl, 'Translation returned empty result', true);
+            return '(translation error: No translation returned)';
+          }
+        } else if (resp2) {
+          const errText2 = await resp2.text();
+          setStatusEl(getElements().statusEl, `llama-server HTTP ${resp2.status}`, true);
+          return `(translation error: HTTP ${resp2.status})`;
+        } else {
+          setStatusEl(getElements().statusEl, 'No response from llama-server (retry)', true);
+          return '(translation error: No response from llama-server)';
+        }
+      } catch (retryErr) {
+        clearTimeout(retryTimeout);
+        setStatusEl(getElements().statusEl, 'Translation retry failed (timed out)', true);
+        try { lastTranslatedSource = ''; } catch (err) {}
+        return '(translation error: Timed out)';
+      }
+    }
+    setStatusEl(getElements().statusEl, 'Could not reach llama-server. Is it running?', true);
+    return '(translation error: Could not reach llama-server. Start llama-server on port 8080.)';
   }
 }
 
@@ -209,6 +278,83 @@ async function wireMainUI() {
   if (!targetEl || !translateBtn || !clearBtn || !statusEl || !liveCaptionOriginalEl || !liveCaptionTranslatedEl) return;
 
   await populateSelect(targetEl);
+  // read preferred language (chrome.storage or localStorage) and reflect it
+  try {
+    const pref = await readPreferredLang();
+    if (pref && targetEl) targetEl.value = pref;
+  } catch (e) {}
+
+  // update active language badge if present
+  try {
+    const badge = document.getElementById('activeLangBadge');
+    if (badge) {
+      const cur = (targetEl && targetEl.value) ? targetEl.value : DEFAULT_LANG;
+      badge.textContent = LANG_NAME_MAP[cur] || cur;
+    }
+  } catch (e) {}
+
+  // When user changes the target language: persist and trigger immediate translation
+  try {
+    if (targetEl) {
+      targetEl.addEventListener('change', async (ev) => {
+        const newLang = (ev && ev.target && ev.target.value) ? ev.target.value : (targetEl.value || DEFAULT_LANG);
+        // persist preference: try chrome.storage.sync, then local, then localStorage
+
+        try {
+          if (typeof chrome !== 'undefined' && chrome.storage) {
+            try { chrome.storage.sync && chrome.storage.sync.set && chrome.storage.sync.set({ preferredLang: newLang }); } catch (e) {}
+            try { chrome.storage.local && chrome.storage.local.set && chrome.storage.local.set({ preferredLang: newLang }); } catch (e) {}
+          }
+        } catch (e) {}
+        try { localStorage.setItem('preferredLang', newLang); } catch (e) {}
+
+        // update status, badge and show a short toast confirming save
+        try { setStatusEl(statusEl, `Target language set to ${LANG_NAME_MAP[newLang] || newLang}` , true); } catch (e) {}
+        try {
+          const badge = document.getElementById('activeLangBadge');
+          if (badge) badge.textContent = LANG_NAME_MAP[newLang] || newLang;
+        } catch (e) {}
+        try {
+          const toast = document.getElementById('popupToast');
+          if (toast) {
+            toast.textContent = `Language saved: ${LANG_NAME_MAP[newLang] || newLang}`;
+            toast.style.display = 'block';
+            toast.setAttribute('aria-hidden', 'false');
+            setTimeout(() => { try { toast.style.display = 'none'; toast.setAttribute('aria-hidden','true'); } catch (e) {} }, 2200);
+          }
+        } catch (e) {}
+
+        // force next caption to be translated immediately
+        try { lastTranslatedSource = ''; } catch (e) {}
+
+        // If autoTranslating is active, trigger an immediate translation for the active tab
+        if (autoTranslating) {
+          try {
+            const tab = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, tabs => r(tabs && tabs[0])));
+            if (tab && isYouTubeVideoUrl(tab.url)) {
+              const caption = await fetchCurrentCaption(tab);
+              if (caption) {
+                // Show translating placeholder
+                try { liveCaptionTranslatedEl.textContent = 'Translating…'; } catch (e) {}
+                const translated = await translateText(caption, newLang);
+                if (translated) {
+                  try { liveCaptionTranslatedEl.textContent = translated; } catch (e) {}
+                  try {
+                    await sendMessageToTab(tab.id, { action: 'overlay_translation', text: translated });
+                  } catch (e) {
+                    const ok = await ensureContentScript(tab);
+                    if (ok) {
+                      try { await sendMessageToTab(tab.id, { action: 'overlay_translation', text: translated }); } catch (err) {}
+                    }
+                  }
+                }
+              }
+            }
+          } catch (e) {}
+        }
+      });
+    }
+  } catch (e) {}
 
   // remove old handlers
   const tClone = translateBtn.cloneNode(true);
@@ -226,12 +372,12 @@ async function wireMainUI() {
     try {
       const tab = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, tabs => r(tabs && tabs[0])));
       if (!tab || !isYouTubeVideoUrl(tab.url)) {
-        liveCaptionOriginalEl.textContent = '';
+        liveCaptionOriginalEl.textContent = 'No YouTube video detected.';
         liveCaptionTranslatedEl.textContent = '';
         return;
       }
       const caption = await fetchCurrentCaption(tab);
-      liveCaptionOriginalEl.textContent = caption || '';
+      liveCaptionOriginalEl.textContent = caption || '(No captions detected)';
       if (!caption) {
         liveCaptionTranslatedEl.textContent = '';
         lastTranslatedSource = '';
@@ -261,21 +407,22 @@ async function wireMainUI() {
           liveCaptionTranslatedEl.textContent = '(translation error)';
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      liveCaptionOriginalEl.textContent = '(Error fetching captions)';
+    }
     // clear existing
     if (pollHandle) clearInterval(pollHandle);
     pollHandle = setInterval(async () => {
       try {
         const tab = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, tabs => r(tabs && tabs[0])));
-        if (!tab || !isYouTubeVideoUrl(tab.url)) { liveCaptionOriginalEl.textContent = ''; liveCaptionTranslatedEl.textContent = ''; lastTranslatedSource = ''; return; }
-        const caption = await fetchCurrentCaption(tab);
-        if (caption !== liveCaptionOriginalEl.textContent) {
-          liveCaptionOriginalEl.textContent = caption || '';
-          // clear translated area when caption updates
+        if (!tab || !isYouTubeVideoUrl(tab.url)) {
+          liveCaptionOriginalEl.textContent = 'No YouTube video detected.';
           liveCaptionTranslatedEl.textContent = '';
-          // reset lastTranslatedSource if caption changed
-          if (!caption) lastTranslatedSource = '';
+          lastTranslatedSource = '';
+          return;
         }
+        const caption = await fetchCurrentCaption(tab);
+        liveCaptionOriginalEl.textContent = caption || '(No captions detected)';
         // if auto translating and caption present and new relative to lastTranslatedSource -> translate
         if (autoTranslating && caption && caption !== lastTranslatedSource) {
           lastTranslatedSource = caption;
@@ -301,12 +448,27 @@ async function wireMainUI() {
             liveCaptionTranslatedEl.textContent = '(translation error)';
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        liveCaptionOriginalEl.textContent = '(Error fetching captions)';
+      }
     }, 900);
   }
 
   function stopPolling() { if (pollHandle) { clearInterval(pollHandle); pollHandle = null; } }
 
+  // Start auto-translation immediately using saved language if available
+  try {
+    // default to starting auto translation
+    autoTranslating = true;
+    if (newTranslate) {
+      newTranslate.textContent = 'Stop Translating';
+      newTranslate.setAttribute('aria-pressed', 'true');
+    }
+    const prefCode = (targetEl && targetEl.value) || DEFAULT_LANG;
+    const prefName = LANG_NAME_MAP[prefCode] || prefCode;
+    setStatusEl(statusEl, `Auto-translation started (${prefName})`, true);
+  } catch (e) {}
+  // Begin polling (this will perform an immediate fetch & translation)
   startPolling();
 
   // Translate button toggles auto-translation
@@ -386,11 +548,30 @@ function initTheme(themeToggle) {
   });
 }
 
+// Check if llama-server is running locally
+async function checkLlamaServer(statusEl) {
+  try {
+    const resp = await fetch('http://127.0.0.1:8080/v1/models', { method: 'GET' });
+    if (resp.ok) {
+      setStatusEl(statusEl, 'llama-server running');
+      return true;
+    }
+    setStatusEl(statusEl, 'llama-server not responding', true);
+    return false;
+  } catch (e) {
+    setStatusEl(statusEl, 'llama-server not running', true);
+    return false;
+  }
+}
+
 // boot
 document.addEventListener('DOMContentLoaded', async () => {
   await wireMainUI();
-  const { themeToggle, settingsBtn, cardBody } = getElements();
+  const { themeToggle, settingsBtn, cardBody, statusEl } = getElements();
   initTheme(themeToggle);
+
+  // Remove Flask ping — check llama-server directly
+  checkLlamaServer(statusEl);
 
   // settings handling unchanged (in-popup injection/back button logic can remain)
   if (!settingsBtn || !cardBody) return;
@@ -499,44 +680,4 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  const translateBtn = document.getElementById('translateBtn');
-  const clearBtn = document.getElementById('clearBtn');
-  const preview = document.getElementById('liveCaptionOriginal');
-  const translated = document.getElementById('liveCaptionTranslated');
-  const targetLang = document.getElementById('targetLang');
-
-  translateBtn.addEventListener('click', () => {
-    getActiveYouTubeTab(tab => {
-      if (!tab) return;
-      chrome.tabs.sendMessage(tab.id, { action: 'translate_captions', target: targetLang.value }, (resp) => {
-        if (resp && resp.text) {
-          preview.textContent = resp.text;
-          translated.textContent = ""; // If you have translation, set here
-        }
-      });
-    });
-  });
-
-  clearBtn.addEventListener('click', () => {
-    getActiveYouTubeTab(tab => {
-      if (!tab) return;
-      chrome.tabs.sendMessage(tab.id, { action: 'clear_overlay' }, () => {
-        preview.textContent = '';
-        translated.textContent = '';
-      });
-    });
-  });
-
-  // Optionally, poll for live captions every second for real-time updates
-  setInterval(() => {
-    getActiveYouTubeTab(tab => {
-      if (!tab) return;
-      chrome.tabs.sendMessage(tab.id, { action: 'get_current_caption' }, (resp) => {
-        if (resp && resp.text) {
-          preview.textContent = resp.text;
-        }
-      });
-    });
-  }, 1000);
-});
+// Note: translate/clear button behaviors are wired in `wireMainUI()` when the popup initializes.
