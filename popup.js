@@ -160,7 +160,7 @@ function pickShortSentence(text, maxLen = 300) {
   return text.slice(-maxLen).trim();
 }
 
-// Translate text using local llama-server (OpenAI-compatible).
+// Translate text using local llama-server (OpenAI-compatible local endpoint — not OpenAI cloud).
 async function translateText(text, targetLangCode) {
   if (!text) return '';
   // pick concise sentence to avoid long generation and reduce timeout risk

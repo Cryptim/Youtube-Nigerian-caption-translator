@@ -1,8 +1,8 @@
+![Project Image](assets/image.png)
+
 ---
 
 # 🎬 YouTube Caption Translator (Local N-ATLaS)
-
-![YouTube Caption Translator](assets/image.png)
 
 The **YouTube Caption Translator** is a Chrome extension that automatically translates YouTube video captions into a user’s **native language** using a local language model (N-ATLaS / llama-server) running on the user's machine. No external cloud API calls are required — all translation happens locally.
 
@@ -30,9 +30,11 @@ The high-level process flow is illustrated below:
 6.  Translated text is received from the local model and rendered as subtitles
 7.  Translated captions appear in real-time on the video
 
-📊 The system flow diagram can be viewed in:
+**Architecture**
 
-![System Flow](assets/flowchart.svg)
+The diagram below shows the extension architecture and how it communicates with a locally hosted LLaMA/llama-server instance running on your machine.
+
+![Architecture Diagram](assets/flowchart.png)
 
 ---
 
@@ -85,9 +87,9 @@ Open chrome://extensions/Enable Developer ModeClick 'Load unpacked' and select t
 
 ## 🔗 Local model (N-ATLaS / llama-server)
 
-This project uses a locally hosted model instance (N-ATLaS or a compatible llama-server). No cloud API key is required. The extension sends translation requests to the local server's OpenAI-compatible endpoint `/v1/chat/completions`.
+This project uses a locally hosted model instance (N-ATLaS or a compatible llama-server). No cloud API key is required. The extension sends translation requests to the local server's OpenAI-compatible endpoint `/v1/chat/completions` on your machine (localhost — not the cloud).
 
-If you need help starting a local llama-server, follow the step-by-step instructions below (Windows example). These steps show how to install a llama-server, place the GGUF model, start the server, and test the OpenAI-style API.
+If you need help starting a local llama-server, follow the step-by-step instructions below (Windows example). These steps show how to install a llama-server, place the GGUF model, start the server, and test the local server's OpenAI-compatible endpoint (this is a local endpoint, not OpenAI's cloud API).
 
 ### Local setup (Windows example)
 
@@ -125,7 +127,7 @@ What this does:
 
 -   Starts the AI model locally
 -   Runs the server on port `8080`
--   Exposes an OpenAI-style API at `http://localhost:8080`
+-   Exposes an OpenAI-compatible local endpoint at `http://localhost:8080` (local only — not OpenAI cloud)
 
 5.  Verify the server is working (open a new Command Prompt and run):
 
@@ -151,7 +153,7 @@ If you'd like I can add macOS / Linux examples or a short troubleshooting checkl
 
 ## 🧑‍💻 Contributors
 
--   **Your Name** — Developer
+-   **Timothy Ignatius Agbor** — Developer
 -   **Awarri AI Team** — Language model provider
 
 ---

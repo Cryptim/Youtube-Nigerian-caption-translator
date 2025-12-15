@@ -47,7 +47,7 @@ You should see: N-ATLaS-GGUF-Q8_0.gguf</pre>
           <li>Start the model server (from the same folder):
             <pre style="margin:6px 0">llama-server -m N-ATLaS-GGUF-Q8_0.gguf --port 8080</pre>
           </li>
-          <li>Test the OpenAI-style API (open a new Command Prompt and run):
+          <li>Test the local server's OpenAI-compatible endpoint (open a new Command Prompt and run):
             <pre style="margin:6px 0">curl http://127.0.0.1:8080/v1/chat/completions ^
   -H "Content-Type: application/json" ^
   -d "{\"model\": \"local\", \"messages\": [{\"role\": \"user\", \"content\": \"Hello\"}]}"

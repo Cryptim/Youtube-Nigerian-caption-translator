@@ -10,7 +10,7 @@ What this does:
 Starts the AI model
 Runs it on your laptop
 
-Creates an OpenAI-style API at:
+Creates an OpenAI-compatible local endpoint (not cloud OpenAI) at:
 http://localhost:8080
 
 check this by creating a new cmd and paste 
