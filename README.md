@@ -1,21 +1,20 @@
-
 ---
 
-# 🎬 YouTube Caption Translator (Powered by Awarri NTAtlas)
+# 🎬 YouTube Caption Translator (Local N-ATLaS)
 
 ![YouTube Caption Translator](assets/image.png)
 
-The **YouTube Caption Translator** is a Chrome extension that automatically translates YouTube video captions into a user’s **native language** using the **Awarri NTAtlas language model**. It enhances accessibility and enables multilingual understanding for users across the globe.
+The **YouTube Caption Translator** is a Chrome extension that automatically translates YouTube video captions into a user’s **native language** using a local language model (N-ATLaS / llama-server) running on the user's machine. No external cloud API calls are required — all translation happens locally.
 
 ---
 
 ## 🚀 Features
 
-* 🧩 Detects captions from any YouTube video
-* 🌐 Translates captions using Awarri’s NTAtlas language model
-* 💬 Displays translated text as live overlay on YouTube videos
-* ⚙️ Simple browser extension setup
-* 🎨 Clean UI via popup and toolbar integration
+-   🧩 Detects captions from any YouTube video
+-   🌐 Translates captions using a local N-ATLaS model (llama-server)
+-   💬 Displays translated text as live overlay on YouTube videos
+-   ⚙️ Simple browser extension setup
+-   🎨 Clean UI via popup and toolbar integration
 
 ---
 
@@ -23,13 +22,13 @@ The **YouTube Caption Translator** is a Chrome extension that automatically tran
 
 The high-level process flow is illustrated below:
 
-1. User opens YouTube
-2. The **YouTube Caption Translator** extension activates
-3. Captions are detected via YouTube’s DOM or API
-4. User selects target language (e.g., Yoruba, Hausa, Igbo, Swahili, etc.)
-5. Captions are sent to **Awarri’s NTAtlas model**
-6. Translated text is received and rendered as subtitles
-7. Translated captions appear in real-time on the video
+1.  User opens YouTube
+2.  The **YouTube Caption Translator** extension activates
+3.  Captions are detected via YouTube’s DOM or API
+4.  User selects target language (e.g., Yoruba, Hausa, Igbo, Swahili, etc.)
+5.  Captions are sent to your local N-ATLaS (llama-server) instance running on `http://127.0.0.1:8080`
+6.  Translated text is received from the local model and rendered as subtitles
+7.  Translated captions appear in real-time on the video
 
 📊 The system flow diagram can be viewed in:
 
@@ -40,78 +39,120 @@ The high-level process flow is illustrated below:
 ## 🧱 Project Structure
 
 ```text
-youtube-caption-translator/
-├── flowchart.drawio         # Editable diagram (inside VS Code)
-├── assets/
-│   └── flowchart.png        # Exported visual version
-├── manifest.json            # Chrome extension manifest (v3)
-├── background.js            # Handles background events and API logic
-├── content.js               # Injected into YouTube pages
-├── popup/
-│   ├── popup.html           # Extension popup interface
-│   ├── popup.js             # Popup functionality and event handling
-│   └── popup.css            # Styling for popup interface
-└── scripts/
-    ├── translator.js        # Handles NTAtlas API translation requests
-    └── captions.js          # Extracts and synchronizes YouTube captions
+youtube-caption-translator/├── flowchart.drawio         # Editable diagram (inside VS Code)├── assets/│   └── flowchart.png        # Exported visual version├── manifest.json            # Chrome extension manifest (v3)├── background.js            # Handles background events and API logic├── content.js               # Injected into YouTube pages├── popup/│   ├── popup.html           # Extension popup interface│   ├── popup.js             # Popup functionality and event handling│   └── popup.css            # Styling for popup interface└── scripts/    ├── translator.js        # Handles NTAtlas API translation requests    └── captions.js          # Extracts and synchronizes YouTube captions
 ```
 
 ---
 
 ## 🧩 Technologies Used
 
-* **JavaScript (ES6+)**
-* **Chrome Extension API (Manifest V3)**
-* **Awarri NTAtlas Language Model API**
-* **HTML5 / CSS3**
-* **Draw.io (System Flow Diagram)**
-* **VS Code**
+-   **JavaScript (ES6+)**
+-   **Chrome Extension API (Manifest V3)**
+-   **Local language model (llama-server / N-ATLaS) accessed over localhost**
+-   **HTML5 / CSS3**
+-   **IndexedDB for caching translations**
+-   **Draw.io (System Flow Diagram)**
+-   **VS Code**
 
 ---
 
-## ⚙️ Setup Instructions
+## ⚙️ Setup Instructions (Local model)
 
-1. Clone this repository:
+1.  Clone this repository:
 
 ```bash
 git clone https://github.com/Cryptim/Youtube-Nigerian-caption-translator.git
 ```
 
-2. Open in VS Code:
+2.  Start your local N-ATLaS / llama-server instance on the machine. The extension expects the server to be reachable at `http://127.0.0.1:8080` (or `http://localhost:8080`). How you start the server depends on your local model setup — for example, run your llama-server command or use the provided instructions for N-ATLaS.
+    
+3.  Open in VS Code (optional):
+    
 
 ```bash
-code youtube-caption-translator
+code Youtube-Nigerian-caption-translator-main
 ```
 
-3. Load the extension in Chrome:
+4.  Load the extension in Chrome:
 
-* Go to `chrome://extensions/`
-* Enable **Developer Mode**
-* Click **Load unpacked**
-* Select the `youtube-caption-translator` folder
+```text
+Open chrome://extensions/Enable Developer ModeClick 'Load unpacked' and select this project folder
+```
 
-4. Test on a YouTube video with captions enabled.
+5.  Open a YouTube video with captions enabled. The extension will inject `content.js`, prefetch captions, and translate them via your local model. Prefetching and caching are automatic; use the popup to change language or clear overlays.
 
 ---
 
-## 🔗 API Integration (Awarri NTAtlas)
+## 🔗 Local model (N-ATLaS / llama-server)
 
-To connect to the NTAtlas model:
+This project uses a locally hosted model instance (N-ATLaS or a compatible llama-server). No cloud API key is required. The extension sends translation requests to the local server's OpenAI-compatible endpoint `/v1/chat/completions`.
 
-* Obtain an API key from [Awarri Developer Portal](https://developer.awarri.com)
-* Add it to your environment configuration inside `translator.js`
-* Example snippet:
+If you need help starting a local llama-server, follow the step-by-step instructions below (Windows example). These steps show how to install a llama-server, place the GGUF model, start the server, and test the OpenAI-style API.
 
-```javascript
-const API_KEY = "YOUR_AWARRI_NTATLAS_KEY";
+### Local setup (Windows example)
+
+1.  Install a llama.cpp / llama-server build (example using `winget`):
+
+```powershell
+winget install llama.cpp
 ```
+
+2.  Download the N-ATLaS GGUF model and save it in a folder called `llama` on your Desktop. Example filename:
+
+```
+N-ATLaS-GGUF-Q8_0.gguf
+```
+
+3.  Open a Command Prompt in the `llama` folder (where you saved the model) and confirm the file is present:
+
+```powershell
+cd %UserProfile%Desktopllamadir
+```
+
+You should see:
+
+```
+N-ATLaS-GGUF-Q8_0.gguf
+```
+
+4.  Start the model server (run inside the model folder):
+
+```powershell
+llama-server -m N-ATLaS-GGUF-Q8_0.gguf --port 8080
+```
+
+What this does:
+
+-   Starts the AI model locally
+-   Runs the server on port `8080`
+-   Exposes an OpenAI-style API at `http://localhost:8080`
+
+5.  Verify the server is working (open a new Command Prompt and run):
+
+```powershell
+curl http://127.0.0.1:8080/v1/chat/completions ^    -H "Content-Type: application/json" ^    -d "{"model": "local", "messages": [{"role": "user", "content": "Hello"}]}"
+```
+
+You should see a response similar to:
+
+```json
+{    "choices": [{        "message": { "content": "Hello! How can I assist you?" }    }]}
+```
+
+6.  Alternatively, start the server by specifying the full path to the model file:
+
+```powershell
+llama-server -m "C:pathtoN-ATLaS-GGUF-Q8_0.gguf" --port 8080
+```
+
+If you'd like I can add macOS / Linux examples or a short troubleshooting checklist.
 
 ---
 
 ## 🧑‍💻 Contributors
 
-* **Your Name** — Developer
-* **Awarri AI Team** — Language model provider
+-   **Your Name** — Developer
+-   **Awarri AI Team** — Language model provider
 
 ---
 
@@ -121,13 +162,10 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-### ✅ Key Fixes Applied
+### ✅ Notes
 
-1. All images now use **forward slashes** (`/`) so GitHub can render them.
-2. Folder tree wrapped in ` ```text ` and uses **spaces** for indentation.
-3. Triple backticks fixed for all code blocks (no extra backticks).
-4. Horizontal rules `---` have spacing above and below for proper rendering.
-5. Placeholder link replaced with the real [Awarri Developer Portal](https://developer.awarri.com).
+-   The extension is designed to operate with a local model server; if you later want cloud support we can add an optional adapter.
+-   IndexedDB is used to cache translations so playback is fast after prefetch.
+-   If a video's timedtext is unavailable the extension falls back to DOM caption extraction.
 
 ---
-

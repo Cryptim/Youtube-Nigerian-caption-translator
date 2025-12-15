@@ -51,9 +51,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   // copy run command button
   const copyBtn = el('copyCmd');
   if (copyBtn) {
+    let feedbackEl = el('copyFeedback');
+    if (!feedbackEl) {
+      feedbackEl = document.createElement('span');
+      feedbackEl.id = 'copyFeedback';
+      feedbackEl.className = 'copy-feedback';
+      copyBtn.insertAdjacentElement('afterend', feedbackEl);
+    }
     copyBtn.addEventListener('click', async () => {
       const cmd = el('runCmd').textContent;
-      try { await navigator.clipboard.writeText(cmd); alert('Command copied'); } catch { alert('Copy failed — manually select and copy'); }
+      // try Clipboard API first
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(cmd);
+        } else {
+          // fallback: use temporary textarea
+          const ta = document.createElement('textarea');
+          ta.value = cmd;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+        }
+        if (feedbackEl) {
+          feedbackEl.style.color = '#10b981';
+          feedbackEl.textContent = 'Copied!';
+          console.log('Options: copied run command');
+          setTimeout(() => { try { feedbackEl.textContent = ''; } catch(e){} }, 2200);
+        } else {
+          alert('Command copied');
+        }
+      } catch (err) {
+        if (feedbackEl) {
+          feedbackEl.style.color = '#ef4444';
+          feedbackEl.textContent = 'Copy failed — select and copy';
+          console.error('Options: copy failed', err);
+          setTimeout(() => { try { feedbackEl.textContent = ''; } catch(e){} }, 3600);
+        } else {
+          alert('Copy failed — manually select and copy');
+        }
+      }
     });
   }
 });

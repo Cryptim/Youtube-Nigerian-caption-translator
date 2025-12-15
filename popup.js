@@ -471,6 +471,17 @@ async function wireMainUI() {
   // Begin polling (this will perform an immediate fetch & translation)
   startPolling();
 
+  // Request background to start persistent auto-translation for the active tab
+  (async function startBg() {
+    try {
+      const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
+      const tab = tabs && tabs[0];
+      if (!tab) return;
+      const target = (targetEl && targetEl.value) || DEFAULT_LANG;
+      try { chrome.runtime.sendMessage({ action: 'start_auto_translate', tabId: tab.id, target }); } catch (e) {}
+    } catch (e) {}
+  })();
+
   // Translate button toggles auto-translation
   newTranslate.addEventListener('click', async () => {
     autoTranslating = !autoTranslating;
@@ -487,10 +498,23 @@ async function wireMainUI() {
           lastTranslatedSource = ''; // force translate
         }
       }
+      // tell background to start persistent auto-translate for this tab
+      try {
+        const tabs2 = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
+        const tab2 = tabs2 && tabs2[0];
+        const target = (document.getElementById('targetLang') || {}).value || DEFAULT_LANG;
+        if (tab2) chrome.runtime.sendMessage({ action: 'start_auto_translate', tabId: tab2.id, target });
+      } catch (e) {}
     } else {
       setStatusEl(statusEl, 'Auto-translation stopped', true);
       lastTranslatedSource = '';
       // optionally clear overlay when stopped? keep overlay; user can Clear Overlay
+      // tell background to stop persistent auto-translate for this tab
+      try {
+        const tabs2 = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
+        const tab2 = tabs2 && tabs2[0];
+        if (tab2) chrome.runtime.sendMessage({ action: 'stop_auto_translate', tabId: tab2.id });
+      } catch (e) {}
     }
   });
 
@@ -509,6 +533,8 @@ async function wireMainUI() {
       if (!tab) { setStatusEl(statusEl, 'No active tab', true); return; }
       try {
         await sendMessageToTab(tab.id, { action: 'clear_overlay' });
+        // also stop background auto-translate for this tab
+        try { chrome.runtime.sendMessage({ action: 'stop_auto_translate', tabId: tab.id }); } catch (e) {}
         setStatusEl(statusEl, 'Overlay cleared', true);
         const cap = await fetchCurrentCaption(tab);
         liveCaptionOriginalEl.textContent = cap || '';

@@ -7,6 +7,19 @@
     "default_popup": "popup.html",
     "default_title": "Caption Translator"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://youtu.be/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "permissions": [
     "scripting",
     "tabs",
