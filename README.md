@@ -30,18 +30,25 @@ The high-level process flow is illustrated below:
 6.  Translated text is received from the local model and rendered as subtitles
 7.  Translated captions appear in real-time on the video
 
+## 📊 Flowchart
+
+The high-level flowchart (user-facing flow) is shown below:
+
+![Flowchart](assets/flowchart.png)
+
 **Architecture**
 
 The diagram below shows the extension architecture and how it communicates with a locally hosted LLaMA/llama-server instance running on your machine.
 
-![Architecture Diagram](assets/flowchart.png)
+![Architecture Diagram](assets/flowchart-architecture.png)
 
 ---
 
 ## 🧱 Project Structure
 
 ```text
-youtube-caption-translator/├── flowchart.drawio         # Editable diagram (inside VS Code)├── assets/│   └── flowchart.png        # Exported visual version├── manifest.json            # Chrome extension manifest (v3)├── background.js            # Handles background events and API logic├── content.js               # Injected into YouTube pages├── popup/│   ├── popup.html           # Extension popup interface│   ├── popup.js             # Popup functionality and event handling│   └── popup.css            # Styling for popup interface└── scripts/    ├── translator.js        # Handles NTAtlas API translation requests    └── captions.js          # Extracts and synchronizes YouTube captions
+youtube-caption-translator/├── flowchart-architecture.drawio  # Editable architecture diagram (draw.io)
+├── assets/│   └── flowchart-architecture.png        # Exported visual version├── manifest.json            # Chrome extension manifest (v3)├── background.js            # Handles background events and API logic├── content.js               # Injected into YouTube pages├── popup/│   ├── popup.html           # Extension popup interface│   ├── popup.js             # Popup functionality and event handling│   └── popup.css            # Styling for popup interface└── scripts/    ├── translator.js        # Handles NTAtlas API translation requests    └── captions.js          # Extracts and synchronizes YouTube captions
 ```
 
 ---
@@ -146,6 +153,16 @@ You should see a response similar to:
 ```powershell
 llama-server -m "C:pathtoN-ATLaS-GGUF-Q8_0.gguf" --port 8080
 ```
+
+Quick start (PowerShell)
+
+If you prefer a small helper script, a Windows PowerShell starter is included at `scripts/start-llama.ps1`. Edit the `ModelPath` inside the script or pass `-ModelPath` when running to point to your GGUF file, then run:
+
+```powershell
+.\scripts\start-llama.ps1
+```
+
+This will launch a `llama-server` process pointing at the model and port `8080` (adjustable).
 
 If you'd like I can add macOS / Linux examples or a short troubleshooting checklist.
 
